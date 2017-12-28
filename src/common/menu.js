@@ -35,6 +35,9 @@ const menuData = [{
     name: '查询表格',
     path: 'table-list',
   }, {
+    name: '角色列表',
+    path: 'role-list',
+  }, {
     name: '标准列表',
     path: 'basic-list',
   }, {
