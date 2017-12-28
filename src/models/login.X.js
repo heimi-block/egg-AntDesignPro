@@ -1,5 +1,5 @@
 import { routerRedux } from 'dva/router';
-import { AccountLogin } from '../services/api';
+import { fakeAccountLogin } from '../services/api';
 
 export default {
   namespace: 'login',
@@ -14,23 +14,15 @@ export default {
         type: 'changeSubmitting',
         payload: true,
       });
-      const response = yield call(AccountLogin, payload);
-      // Login successfully
-      if (response.code === 0) {
-        // 登录成功
-        response.status = 'ok';
-        response.type = 'account';
-        window.localStorage.setItem('X-TOKEN', response.data.token);
-        yield put(routerRedux.push('/'));
-      } else {
-        // 登录失败
-        response.status = 'error';
-        response.type = 'account';
-      }
+      const response = yield call(fakeAccountLogin, payload);
       yield put({
         type: 'changeLoginStatus',
         payload: response,
       });
+      // Login successfully
+      if (response.status === 'ok') {
+        yield put(routerRedux.push('/'));
+      }
     },
     *logout(_, { put }) {
       yield put({
@@ -39,8 +31,6 @@ export default {
           status: false,
         },
       });
-      // 清除LocalSotrage
-      window.localStorage.removeItem('L-TOKEN');
       yield put(routerRedux.push('/user/login'));
     },
   },

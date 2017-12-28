@@ -13,6 +13,7 @@ const { Header } = Layout;
 
 export default class GlobalHeader extends PureComponent {
   componentDidMount() {
+    // * 此段代码可作为检测是否登入/Token是否过期
     this.props.dispatch({
       type: 'user/fetchCurrent',
     });

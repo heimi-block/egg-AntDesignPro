@@ -81,7 +81,7 @@ export default class Login extends Component {
                 this.renderMessage('账户或密码错误')
               }
               <FormItem>
-                {getFieldDecorator('userName', {
+                {getFieldDecorator('mobile', {
                   rules: [{
                     required: type === 'account', message: '请输入账户名！',
                   }],
@@ -116,7 +116,7 @@ export default class Login extends Component {
                 this.renderMessage('验证码错误')
               }
               <FormItem>
-                {getFieldDecorator('mobile', {
+                {getFieldDecorator('mobiles', {
                   rules: [{
                     required: type === 'mobile', message: '请输入手机号！',
                   }, {

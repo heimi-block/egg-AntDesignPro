@@ -45,9 +45,10 @@ export default function request(url, options) {
     credentials: 'include',
   };
   const newOptions = { ...defaultOptions, ...options };
-  if (newOptions.method === 'POST' || newOptions.method === 'PUT') {
+  if (newOptions.method === 'POST' || newOptions.method === 'PUT' || newOptions.method === 'GET' || newOptions.method === 'DELETE') {
     newOptions.headers = {
       Accept: 'application/json',
+      Authorization: `Bearer ${window.localStorage.getItem('X-TOKEN')}`,
       'Content-Type': 'application/json; charset=utf-8',
       ...newOptions.headers,
     };
