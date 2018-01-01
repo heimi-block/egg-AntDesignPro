@@ -53,6 +53,9 @@ const menuData = [{
       name: '搜索列表（项目）',
       path: 'projects',
     }, {
+      name: '搜索列表（附件）',
+      path: 'attachments',
+    }, {
       name: '搜索列表（应用）',
       path: 'applications',
     }],
