@@ -11,65 +11,38 @@ import TagSelect from '../../components/TagSelect';
 import styles from './Attachments.less';
 
 const { Option } = Select;
+const SubMenu = Menu.SubMenu;
+const MenuItemGroup = Menu.ItemGroup;
+const Search = Input.Search;
 const FormItem = Form.Item;
 const { TextArea } = Input;
 
-// 上传单个文件
-const propsForSingleUpload = {
+// 上传单个文件配置
+const propsUploadForSingle = {
   name: 'file',
-  // multiple: true,
-  action: '//jsonplaceholder.typicode.com/posts/',
+  action: 'http://localhost:7001/api/upload',
   headers: {
-    authorization: 'authorization-text',
-  },
-  onChange(info) {
-    if (info.file.status !== 'uploading') {
-      console.log(info.file, info.fileList);
-    }
-    if (info.file.status === 'done') {
-      message.success(`${info.file.name} file uploaded successfully`);
-    } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} file upload failed.`);
-    }
+    authorization: `Bearer ${window.localStorage.getItem('X-TOKEN')}`,
   },
 };
-// 上传多个文件
-const propsForMultiUpload = {
+
+// 上传多个文件配置
+const propsUploadForMultiple = {
   name: 'file',
   multiple: true,
-  action: '//jsonplaceholder.typicode.com/posts/',
+  action: 'http://localhost:7001/api/uploads',
   headers: {
-    authorization: 'authorization-text',
-  },
-  onChange(info) {
-    if (info.file.status !== 'uploading') {
-      console.log(info.file, info.fileList);
-    }
-    if (info.file.status === 'done') {
-      message.success(`${info.file.name} file uploaded successfully`);
-    } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} file upload failed.`);
-    }
+    authorization: `Bearer ${window.localStorage.getItem('X-TOKEN')}`,
   },
 };
-// 重新上传文件即更新操作
-const propsForReUpload = {
+
+// 重新上传文件配置
+const propsUploadForReupload = {
   name: 'file',
-  // multiple: true,
-  // action: '//jsonplaceholder.typicode.com/posts/222',
+  // action: '//jsonplaceholder.typicode.com/posts/:id',
   showUploadList: false,
   headers: {
-    authorization: 'authorization-text',
-  },
-  onChange(info) {
-    if (info.file.status !== 'uploading') {
-      console.log(info.file, info.fileList);
-    }
-    if (info.file.status === 'done') {
-      message.success(`${info.file.name} file uploaded successfully`);
-    } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} file upload failed.`);
-    }
+    authorization: `Bearer ${window.localStorage.getItem('X-TOKEN')}`,
   },
 };
 
@@ -86,6 +59,7 @@ export default class FilterCardList extends PureComponent {
     disabled: true,
     modalVisibleForUrlUpload: false,
     modalVisible: false,
+    currentAttachment: {},
   };
 
 
@@ -93,9 +67,70 @@ export default class FilterCardList extends PureComponent {
     this.props.dispatch({
       type: 'attachments/fetch',
       payload: {
-        count: 8,
+        currentPage: 1,
       },
     });
+  }
+
+  // 上传单个文件实现
+  onChangeUploadForSingle = (info) => {
+    if (info.file.status !== 'uploading') {
+      console.log(info.file, info.fileList);
+    }
+    if (info.file.status === 'done') {
+      message.success(`${info.file.name} file uploaded successfully`);
+      // 上传成功后，重新加载数据
+      const { dispatch } = this.props;
+      // 2秒后重新请求数据
+      setTimeout(dispatch({
+        type: 'attachments/fetch',
+        payload: {
+          count: 8,
+        },
+      }), 2000);
+    } else if (info.file.status === 'error') {
+      message.error(`${info.file.name} file upload failed.`);
+    }
+  }
+  // 上传多个文件实现
+  onChangeUploadForMultiple = (info) => {
+    if (info.file.status !== 'uploading') {
+      console.log(info.file, info.fileList);
+    }
+    if (info.file.status === 'done') {
+      message.success(`${info.file.name} file uploaded successfully`);
+      // 上传成功后，重新加载数据
+      const { dispatch } = this.props;
+      // 2秒后重新请求数据
+      setTimeout(dispatch({
+        type: 'attachments/fetch',
+        payload: {
+          count: 8,
+        },
+      }), 2000);
+    } else if (info.file.status === 'error') {
+      message.error(`${info.file.name} file upload failed.`);
+    }
+  }
+  // 重新上传文件实现
+  onChangeUploadForReupload = (info) => {
+    if (info.file.status !== 'uploading') {
+      console.log(info.file, info.fileList);
+    }
+    if (info.file.status === 'done') {
+      message.success(`${info.file.name} file uploaded successfully`);
+      // 上传成功后，重新加载数据
+      const { dispatch } = this.props;
+      // 2秒后重新请求数据
+      setTimeout(dispatch({
+        type: 'attachments/fetch',
+        payload: {
+          count: 8,
+        },
+      }), 2000);
+    } else if (info.file.status === 'error') {
+      message.error(`${info.file.name} file upload failed.`);
+    }
   }
 
   handleFormSubmit = () => {
@@ -126,13 +161,12 @@ export default class FilterCardList extends PureComponent {
   // 删除选中文件
   handleDelete = (e) => {
     console.log('id:', e);
-    console.log('payload:', this.state.addInputValueForName);
-    // this.props.dispatch({
-    //   type: 'role/delete',
-    //   payload: {
-    //     name: this.state.addInputValueForName,
-    //   },
-    // });
+    this.props.dispatch({
+      type: 'attachments/remove',
+      payload: {
+        id: e,
+      },
+    });
   }
 
   // 编辑模态框-控制器
@@ -148,7 +182,14 @@ export default class FilterCardList extends PureComponent {
       modalVisibleForUrlUpload: !!flag,
     });
   }
-
+  // 处理编辑
+  handleEdit = (e) => {
+    console.log(111, e);
+    this.setState({
+      currentAttachment: e,
+    });
+    this.handleModalVisible(true);
+  }
   // 添加单个数据
   handleAdd = () => {
     // this.props.dispatch({
@@ -166,13 +207,12 @@ export default class FilterCardList extends PureComponent {
 
   // 通过URL添加文件
   handleUrlUpload = () => {
-    // this.props.dispatch({
-    //   type: 'role/add',
-    //   payload: {
-    //     name: this.state.addInputValueForName,
-    //   },
-    // });
-    message.success('添加成功');
+    this.props.dispatch({
+      type: 'attachments/add',
+      payload: {
+        url: this.state.addInputValueForURL,
+      },
+    });
     this.handleModalVisibleForUrlUpload(false);
     // this.setState({
     //   modalVisibleForUrlUpload: false,
@@ -193,10 +233,26 @@ export default class FilterCardList extends PureComponent {
     });
   }
 
+  handleClick = (e) => {
+    console.log('click ', e);
+    // this.setState({
+    //   current: e.key,
+    // })
+  }
+
+  fetchMore = () => {
+    this.props.dispatch({
+      type: 'list/appendFetch',
+      payload: {
+        count: 10,
+      },
+    });
+  }
+
   render() {
     const { attachments: { attachments, loading }, form } = this.props;
     const { getFieldDecorator } = form;
-    const { modalVisible, modalVisibleForUrlUpload } = this.state;
+    const { modalVisible, modalVisibleForUrlUpload, currentAttachment } = this.state;
 
     const formItemLayout = {
       wrapperCol: {
@@ -219,61 +275,52 @@ export default class FilterCardList extends PureComponent {
       </Menu>
     );
 
+    const loadMore = attachments.length > 0 ? (
+      <div style={{ textAlign: 'center', marginTop: 16, borderTop: '1px solid #e8e8e8' }}>
+        {/* <Button onClick={this.fetchMore} style={{ paddingLeft: 48, paddingRight: 48, marginTop: 24 }}>
+          {loading ? <span><Icon type="loading" /> 加载中...</span> : '加载更多'}
+        </Button> */}
+        <Tooltip placement="rightTop" title="加载更多"> <Button shape="circle" icon="down" size="sm" style={{ marginTop: 24 }}/> </Tooltip>
+      </div>
+    ) : null;
+
     return (
       <div className={styles.filterCardList}>
         <Card bordered={false}>
           <Form layout="inline">
-            <StandardFormRow title="所属类目" block style={{ paddingBottom: 11 }}>
-              <FormItem>
-                {getFieldDecorator('category')(
-                  <TagSelect onChange={this.handleFormSubmit} expandable>
-                    <TagSelect.Option value="cat2">图像</TagSelect.Option>
-                    <TagSelect.Option value="cat3">文档</TagSelect.Option>
-                    <TagSelect.Option value="cat4">视频</TagSelect.Option>
-                    <TagSelect.Option value="cat5">音频</TagSelect.Option>
-                  </TagSelect>
-                )}
-              </FormItem>
-            </StandardFormRow>
-            <StandardFormRow
-              title="其它选项"
-              grid
-              last
-            >
-              <Row gutter={16}>
-                <Col lg={8} md={10} sm={10} xs={24}>
-                  <FormItem
-                    {...formItemLayout}
-                  >
-                    <Upload {...propsForSingleUpload}>
-                      <Button style={{ marginLeft: 8 }}>
-                      上传单个文件
-                      </Button>
-                    </Upload>
-                  </FormItem>
-                </Col>
-                <Col lg={8} md={10} sm={10} xs={24}>
-                  <FormItem
-                    {...formItemLayout}
-                  >
-                    <Upload {...propsForMultiUpload}>
-                      <Button style={{ marginLeft: 8 }}>
-                      上传多个文件
-                      </Button>
-                    </Upload>
-                  </FormItem>
-                </Col>
-                <Col lg={8} md={10} sm={10} xs={24}>
-                  <FormItem
-                    {...formItemLayout}
-                  >
-                    <Button onClick={() => this.handleModalVisibleForUrlUpload(true)} style={{ marginLeft: 8 }}>
-                       通过URL添加
+            <Row gutter={16}>
+              <Col lg={8} md={10} sm={10} xs={24}>
+                <FormItem
+                  {...formItemLayout}
+                >
+                  <Upload {...propsUploadForSingle} onChange={this.onChangeUploadForSingle}>
+                    <Button style={{ marginLeft: 8 }}>
+                    上传单个文件
                     </Button>
-                  </FormItem>
-                </Col>
-              </Row>
-            </StandardFormRow>
+                  </Upload>
+                </FormItem>
+              </Col>
+              <Col lg={8} md={10} sm={10} xs={24}>
+                <FormItem
+                  {...formItemLayout}
+                >
+                  <Upload {...propsUploadForMultiple} onChange={this.onChangeUploadForMultiple}>
+                    <Button style={{ marginLeft: 8 }}>
+                      上传多个文件
+                    </Button>
+                  </Upload>
+                </FormItem>
+              </Col>
+              <Col lg={8} md={10} sm={10} xs={24}>
+                <FormItem
+                  {...formItemLayout}
+                >
+                  <Button onClick={() => this.handleModalVisibleForUrlUpload(true)} style={{ marginLeft: 8 }}>
+                       通过URL添加
+                  </Button>
+                </FormItem>
+              </Col>
+            </Row>
           </Form>
         </Card>
         <List
@@ -281,20 +328,21 @@ export default class FilterCardList extends PureComponent {
           style={{ marginTop: 24 }}
           grid={{ gutter: 24, xl: 4, lg: 3, md: 3, sm: 2, xs: 1 }}
           loading={loading}
+          loadMore={loadMore}
           dataSource={attachments}
           renderItem={item => (
-            <List.Item key={item.id}>
+            <List.Item key={item._id} style={{ marginBottom: 24, borderBottom: 'none' }}>
               <Card
                 hoverable
-                cover={<img alt={item.title} src={item.cover} height={154} />}
+                cover={<img alt={item.filename} src={`http://localhost:7001/public/${item.url}`} height={154} />}
                 bodyStyle={{ paddingBottom: 20 }}
                 actions={[
-                  <Upload {...propsForReUpload} action="//jsonplaceholder.typicode.com/posts/">
+                  <Upload {...propsUploadForReupload} onChange={this.onChangeUploadForReupload} action={`http://localhost:7001/api/upload/${item._id}`}>
                     <Tooltip title="重新上传"><Icon type="reload" /></Tooltip>
                   </Upload>,
-                  <Tooltip onClick={() => this.handleModalVisible(true)} title="编辑"><Icon type="edit" /></Tooltip>,
-                  <Tooltip onClick={() => this.handleCopyURLtoClipboard(item.cover)} title="复制URL"><Icon type="link" /></Tooltip>,
-                  <Tooltip onClick={() => this.handleDelete(item.cover)} title="删除"><Icon type="delete" /></Tooltip>,
+                  <Tooltip onClick={() => this.handleEdit(item)} title="编辑"><Icon type="edit" /></Tooltip>,
+                  <Tooltip onClick={() => this.handleCopyURLtoClipboard(`http://localhost:7001/public/${item.url}`)} title="复制URL"><Icon type="link" /></Tooltip>,
+                  <Tooltip onClick={() => this.handleDelete(item._id)} title="删除"><Icon type="delete" /></Tooltip>,
                   // <Dropdown overlay={itemMenu}><Icon type="ellipsis" /></Dropdown>,
                 ]}
               />
@@ -314,8 +362,8 @@ export default class FilterCardList extends PureComponent {
               label="文件名"
             >
               {
-                getFieldDecorator('fileName', {
-                initialValue: 'avatar.png',
+                getFieldDecorator('filename', {
+                initialValue: currentAttachment ? currentAttachment.filename : '',
                 })(<Input disabled={this.state.disabled} />)
             }
             </FormItem>
@@ -325,12 +373,8 @@ export default class FilterCardList extends PureComponent {
               label="描述"
             >
               {
-                getFieldDecorator('competitor', {
-                  initialValue: '',
-                  rules: [{
-                    required: true,
-                    message: '请填入网络图片地址URLxxxx',
-                  }],
+                getFieldDecorator('extra', {
+                  initialValue: currentAttachment ? currentAttachment.extra : '',
                 })(<TextArea style={{ minHeight: 32 }} rows={2} />)
               }
             </FormItem>
@@ -340,9 +384,9 @@ export default class FilterCardList extends PureComponent {
               label="URL"
             >
               {
-                getFieldDecorator('customerName', {
-                initialValue: 'https://cxcat.files.wordpress.com/2017/12/e6bc94e7a4bae69687e7a8bf.png',
-                })(<Input addonAfter={<Tooltip placement="rightTop" title="复制到剪贴板"> <Icon type="link" style={{ cursor: 'pointer' }} onClick={() => this.handleCopyURLtoClipboard('https://cxcat.files.wordpress.com/2017/12/e6bc94e7a4bae69687e7a8bf.png')} /> </Tooltip>} />)
+                getFieldDecorator('url', {
+                initialValue: currentAttachment ? currentAttachment.url : '',
+                })(<Input addonAfter={<Tooltip placement="rightTop" title="复制到剪贴板"> <Icon type="link" style={{ cursor: 'pointer' }} onClick={() => this.handleCopyURLtoClipboard(`http://localhost:7001/public/${currentAttachment ? currentAttachment.filename : ''}`)} /> </Tooltip>} />)
             }
             </FormItem>
             <FormItem
@@ -351,8 +395,8 @@ export default class FilterCardList extends PureComponent {
               label="文件类型"
             >
               {
-               getFieldDecorator('date-time-picker', {
-              initialValue: 'PNG',
+               getFieldDecorator('extname', {
+              initialValue: currentAttachment ? currentAttachment.extname : '',
             })(
               <Input disabled={this.state.disabled} />
           )}
@@ -363,8 +407,8 @@ export default class FilterCardList extends PureComponent {
               label="上传日期"
             >
               {
-               getFieldDecorator('date-time-picker', {
-              initialValue: moment('2017-12-29 01:30:32', 'YYYY-MM-DD HH:mm:ss'),
+               getFieldDecorator('createdAt', {
+              initialValue: moment(currentAttachment ? currentAttachment.createdAt : '', 'YYYY-MM-DD HH:mm:ss'),
             })(
               <DatePicker disabled={this.state.disabled} style={{ width: '100%' }} showTime format="YYYY-MM-DD HH:mm:ss" />
           )}

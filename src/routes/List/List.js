@@ -25,16 +25,22 @@ export default class SearchList extends Component {
   }
 
   render() {
-    // const tabList = [{
-    //   key: 'articles',
-    //   tab: '文章',
-    // }, {
-    //   key: 'applications',
-    //   tab: '应用',
-    // }, {
-    //   key: 'projects',
-    //   tab: '项目',
-    // }];
+    const tabList = [{
+      key: 'articles',
+      tab: '全部',
+    }, {
+      key: 'applications',
+      tab: '图像',
+    }, {
+      key: 'projects',
+      tab: '文档',
+    }, {
+      key: 'projects',
+      tab: '视频',
+    }, {
+      key: 'projects',
+      tab: '音频',
+    }];
 
     const mainSearch = (
       <div style={{ textAlign: 'center' }}>
@@ -55,7 +61,7 @@ export default class SearchList extends Component {
       <PageHeaderLayout
         title="搜索列表"
         content={mainSearch}
-        // tabList={tabList}
+        tabList={tabList}
         activeTabKey={location.pathname.replace(`${match.path}/`, '')}
         onTabChange={this.handleTabChange}
       >
