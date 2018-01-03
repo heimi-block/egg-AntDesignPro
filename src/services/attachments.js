@@ -18,8 +18,9 @@ export async function removeAttachments(params) {
   });
 }
 
+// 为图片添加详细或备注
 export async function updateAttachments(id, values) {
-  return request(`/api/role/${id}`, {
+  return request(`/api/upload/${id}/extra`, {
     method: 'PUT',
     body: {
       ...values,
@@ -29,7 +30,7 @@ export async function updateAttachments(id, values) {
 }
 
 export async function queryAttachments(params) {
-  return request(`/api/upload?isPaging=false&pageSize=10&${stringify(params)}`, {
+  return request(`/api/upload?isPaging=false&pageSize=4&${stringify(params)}`, {
     method: 'GET',
   });
 }

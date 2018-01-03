@@ -1,30 +1,19 @@
 import { message } from 'antd';
-import { queryAttachments, removeAttachments, addAttachmentsByUrl } from '../services/attachments';
+import { queryAttachments, removeAttachments, updateAttachments, addAttachmentsByUrl } from '../services/attachments';
 
 export default {
   namespace: 'attachments',
 
   state: {
-    attachments: [],
+    data: {
+      list: [],
+      pagination: {},
+    },
+    // attachments: [],
     loading: false,
   },
 
   effects: {
-    *fetch({ payload }, { call, put }) {
-      yield put({
-        type: 'changeLoading',
-        payload: true,
-      });
-      const response = yield call(queryAttachments, payload);
-      yield put({
-        type: 'save',
-        payload: Array.isArray(response.data.list) ? response.data.list : [],
-      });
-      yield put({
-        type: 'changeLoading',
-        payload: false,
-      });
-    },
     *add({ payload, callback }, { call, put }) {
       // 通过URL添加网络图片
       yield put({
@@ -38,7 +27,7 @@ export default {
         message.error('添加失败');
       }
       if (callback) callback();
-      // yield put({ type: 'reload' });
+      yield put({ type: 'reload' });
     },
     *remove({ payload, callback }, { call, put }) {
       // 删除单个数据
@@ -54,38 +43,98 @@ export default {
         message.error('删除失败, 文件不已存在或已删除');
       }
       if (callback) callback();
-      // yield put({ type: 'reload' });
+      yield put({ type: 'reload' });
     },
-    // *appendFetch({ payload }, { call, put }) {
-    //   yield put({
-    //     type: 'changeLoading',
-    //     payload: true,
-    //   });
-    //   const response = yield call(queryFakeList, payload);
-    //   yield put({
-    //     type: 'appendList',
-    //     payload: Array.isArray(response) ? response : [],
-    //   });
-    //   yield put({
-    //     type: 'changeLoading',
-    //     payload: false,
-    //   });
-    // },
+    *update({ payload: { id, extra }, callback }, { call, put }) {
+      // 更新单个数据
+      yield put({
+        type: 'changeLoading',
+        payload: true,
+      });
+      const response = yield call(updateAttachments, id, extra);
+      if (response.code === 0) {
+        // 修改成功
+        message.success('修改成功');
+      } else {
+        message.error('修改失败');
+      }
+      if (callback) callback();
+      yield put({ type: 'reload' });
+    },
+    *fetch({ payload }, { call, put }) {
+      yield put({
+        type: 'changeLoading',
+        payload: true,
+      });
+      const response = yield call(queryAttachments, payload);
+      // 处理表格所需的dataSource
+      const dataSource = {
+        list: Array.isArray(response.data.list) ? response.data.list : [],
+        pagination: {
+          total: response.data.count,
+          pageSize: response.data.pageSize || 4,
+          current: response.data.currentPage || 1,
+        },
+      };
+      yield put({
+        type: 'save',
+        payload: dataSource,
+      });
+      yield put({
+        type: 'changeLoading',
+        payload: false,
+      });
+    },
+    *appendFetch({ payload }, { call, put }) {
+      yield put({
+        type: 'changeLoading',
+        payload: true,
+      });
+      const response = yield call(queryAttachments, payload);
+      // 处理表格所需的dataSource
+      const dataSource = {
+        list: Array.isArray(response.data.list) ? response.data.list : [],
+        pagination: {
+          total: response.data.count,
+          pageSize: response.data.pageSize || 4,
+          current: response.data.currentPage || 1,
+        },
+      };
+      yield put({
+        type: 'appendList',
+        payload: dataSource,
+      });
+      yield put({
+        type: 'changeLoading',
+        payload: false,
+      });
+    },
+    *reload(action, { put, select }) {
+      // 删除或修改后，重新定位并刷新数据
+      const currentPage = yield select(state => state.role.data.pagination.current);
+      const pageSize = yield select(state => state.role.data.pagination.pageSize);
+      yield put({ type: 'fetch', payload: { currentPage, pageSize } });
+    },
   },
 
   reducers: {
     save(state, action) {
       return {
         ...state,
-        attachments: action.payload,
+        data: action.payload,
       };
     },
-    // appendList(state, action) {
-    //   return {
-    //     ...state,
-    //     list: state.list.concat(action.payload),
-    //   };
-    // },
+    appendList(state, action) {
+      // console.log('waht fuck', JSON.stringify(state));
+      // console.log('waht fuck payload', JSON.stringify(action.payload));
+      return {
+        ...state,
+        data: {
+          list: state.data.list.concat(action.payload.list),
+          pagination: action.payload.pagination,
+        },
+      };
+    },
     changeLoading(state, action) {
       return {
         ...state,

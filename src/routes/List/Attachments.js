@@ -16,6 +16,7 @@ const MenuItemGroup = Menu.ItemGroup;
 const Search = Input.Search;
 const FormItem = Form.Item;
 const { TextArea } = Input;
+const { Meta } = Card;
 
 // 上传单个文件配置
 const propsUploadForSingle = {
@@ -34,6 +35,12 @@ const propsUploadForMultiple = {
   headers: {
     authorization: `Bearer ${window.localStorage.getItem('X-TOKEN')}`,
   },
+};
+
+const attachmentKind = {
+  document: ['.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.csv', '.key', '.numbers', '.pages', '.pdf', '.txt', '.psd', '.zip', '.gz', '.tgz', '.gzip' ],
+  video: ['.mov', '.mp4', '.avi'],
+  audio: ['.mp3', '.wma', '.wav', '.ogg', '.ape', '.acc'],
 };
 
 // 重新上传文件配置
@@ -153,6 +160,7 @@ export default class FilterCardList extends PureComponent {
 
   // 复制图片URL到剪贴板
   handleCopyURLtoClipboard = (e) => {
+    console.log(111, JSON.stringify(this.props));
     // console.log('URL:', e);
     copy(e);
     message.success('复制URL到剪贴板成功');
@@ -189,6 +197,22 @@ export default class FilterCardList extends PureComponent {
       currentAttachment: e,
     });
     this.handleModalVisible(true);
+  }
+  // 编辑
+  handleUpdate = () => {
+    const { form, dispatch } = this.props;
+    form.validateFields((err, values) => {
+      if (!err) {
+        // onOk(values);
+        console.log(12323, values);
+        const id = this.state.currentAttachment._id;
+        const extra = { extra: values.extra };
+        dispatch({
+          type: 'attachments/update',
+          payload: { id, extra },
+        });
+      }
+    });
   }
   // 添加单个数据
   handleAdd = () => {
@@ -240,17 +264,40 @@ export default class FilterCardList extends PureComponent {
     // })
   }
 
-  fetchMore = () => {
-    this.props.dispatch({
-      type: 'list/appendFetch',
-      payload: {
-        count: 10,
-      },
-    });
+  // fetchMore = () => {
+  //   this.props.dispatch({
+  //     type: 'list/appendFetch',
+  //     payload: {
+  //       count: 10,
+  //     },
+  //   });
+  // }
+
+  // 加载数据
+  handleFetchMore = () => {
+    const { attachments: { data }, dispatch } = this.props;
+    const key = window.localStorage.getItem('currentKey');
+    message.info(key);
+    if (key === 'all') {
+      dispatch({
+        type: 'attachments/appendFetch',
+        payload: {
+          currentPage: Number(data.pagination.current) + 1,
+        },
+      });
+    } else {
+      dispatch({
+        type: 'attachments/appendFetch',
+        payload: {
+          currentPage: Number(data.pagination.current) + 1,
+          kind: key,
+        },
+      });
+    }
   }
 
   render() {
-    const { attachments: { attachments, loading }, form } = this.props;
+    const { attachments: { loading, data }, form } = this.props;
     const { getFieldDecorator } = form;
     const { modalVisible, modalVisibleForUrlUpload, currentAttachment } = this.state;
 
@@ -261,28 +308,14 @@ export default class FilterCardList extends PureComponent {
       },
     };
 
-    const itemMenu = (
-      <Menu>
-        <Menu.Item>
-          <a target="_blank" rel="noopener noreferrer" href="http://www.alipay.com/">1st menu item</a>
-        </Menu.Item>
-        <Menu.Item>
-          <a target="_blank" rel="noopener noreferrer" href="http://www.taobao.com/">2nd menu item</a>
-        </Menu.Item>
-        <Menu.Item>
-          <a target="_blank" rel="noopener noreferrer" href="http://www.tmall.com/">3d menu item</a>
-        </Menu.Item>
-      </Menu>
-    );
-
-    const loadMore = attachments.length > 0 ? (
+    const loadMore = data.list.length < data.pagination.total ? (
       <div style={{ textAlign: 'center', marginTop: 16, borderTop: '1px solid #e8e8e8' }}>
         {/* <Button onClick={this.fetchMore} style={{ paddingLeft: 48, paddingRight: 48, marginTop: 24 }}>
           {loading ? <span><Icon type="loading" /> 加载中...</span> : '加载更多'}
         </Button> */}
-        <Tooltip placement="rightTop" title="加载更多"> <Button shape="circle" icon="down" size="sm" style={{ marginTop: 24 }}/> </Tooltip>
+        <Tooltip placement="rightTop" title="加载更多"> <Button onClick={() => this.handleFetchMore()} shape="circle" icon="down" size="small" style={{ marginTop: 24 }} /> </Tooltip>
       </div>
-    ) : null;
+    ) : <div style={{ textAlign: 'center', marginTop: 16, borderTop: '1px solid #e8e8e8' }}> <p style={{ marginTop: 16 }}> <Icon type="frown-o" /> 已加载完全部数据 </p> </div>;
 
     return (
       <div className={styles.filterCardList}>
@@ -329,12 +362,15 @@ export default class FilterCardList extends PureComponent {
           grid={{ gutter: 24, xl: 4, lg: 3, md: 3, sm: 2, xs: 1 }}
           loading={loading}
           loadMore={loadMore}
-          dataSource={attachments}
+          dataSource={data.list}
           renderItem={item => (
             <List.Item key={item._id} style={{ marginBottom: 24, borderBottom: 'none' }}>
               <Card
                 hoverable
-                cover={<img alt={item.filename} src={`http://localhost:7001/public/${item.url}`} height={154} />}
+                cover={attachmentKind.document.toString().indexOf(item.extname) > -1 ? <div style={{ backgroundSize: 'cover', backgroundImage: 'url("http://localhost:7001/public/attachment/document.png")', height: 154 }} > <h4 style={{ color: '#f2f2f2', textAlign: 'center', paddingTop: 122 }} > {item.filename} </h4> </div>
+                : attachmentKind.video.toString().indexOf(item.extname) > -1 ? <div style={{ backgroundSize: 'cover', backgroundImage: 'url("http://localhost:7001/public/attachment/video.png")', height: 154 }} > <h4 style={{ color: '#f2f2f2', textAlign: 'center', paddingTop: 122 }} > {item.filename} </h4> </div>
+                : attachmentKind.audio.toString().indexOf(item.extname) > -1 ? <div style={{ backgroundSize: 'cover', backgroundImage: 'url("http://localhost:7001/public/attachment/audio.png")', height: 154 }} > <h4 style={{ color: '#f2f2f2', textAlign: 'center', paddingTop: 122 }} > {item.filename} </h4> </div>
+                : <img alt={item.filename} src={`http://localhost:7001/public/${item.url}`} height={154} />}
                 bodyStyle={{ paddingBottom: 20 }}
                 actions={[
                   <Upload {...propsUploadForReupload} onChange={this.onChangeUploadForReupload} action={`http://localhost:7001/api/upload/${item._id}`}>
@@ -352,10 +388,10 @@ export default class FilterCardList extends PureComponent {
         <Modal
           title="编辑媒体"
           visible={modalVisible}
-          onOk={() => this.handleAdd()}
+          onOk={() => this.handleUpdate()}
           onCancel={() => this.handleModalVisible()}
         >
-          <Form onSubmit={this.handleAdd}>
+          <Form onSubmit={this.handleUpdate}>
             <FormItem
               labelCol={{ span: 5 }}
               wrapperCol={{ span: 15 }}
@@ -427,12 +463,7 @@ export default class FilterCardList extends PureComponent {
             label="URL地址"
           >
             {
-                getFieldDecorator('fileNameXXURL', {
-                  rules: [{
-                    required: true,
-                    message: '请填入网络图片地址URL',
-                  }],
-                })(<Input onChange={this.handleAddInputForUrlUpload} />)
+                getFieldDecorator('fileNameXXURL')(<Input onChange={this.handleAddInputForUrlUpload} />)
             }
           </FormItem>
         </Modal>

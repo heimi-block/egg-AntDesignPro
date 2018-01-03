@@ -7,17 +7,84 @@ import { getRoutes } from '../../utils/utils';
 
 @connect()
 export default class SearchList extends Component {
+  state = {
+    currentKey: 'all',
+  };
+
+  handleFormSubmitSearch = (e) => {
+    const { dispatch } = this.props;
+    const key = this.state.currentKey;
+    if (key === 'all') {
+      dispatch({
+        type: 'attachments/fetch',
+        payload: {
+          currentPage: 1,
+          search: e,
+        },
+      });
+    } else {
+      dispatch({
+        type: 'attachments/fetch',
+        payload: {
+          currentPage: 1,
+          search: e,
+          kind: key,
+        },
+      });
+    }
+  }
+
   handleTabChange = (key) => {
     const { dispatch, match } = this.props;
+    this.setState({
+      currentKey: key,
+    });
+    window.localStorage.setItem('currentKey', key);
     switch (key) {
-      case 'articles':
-        dispatch(routerRedux.push(`${match.url}/articles`));
+      case 'all':
+        // dispatch(routerRedux.push(`${match.url}/articles`));
+        dispatch({
+          type: 'attachments/fetch',
+          payload: {
+            currentPage: 1,
+          },
+        });
         break;
-      case 'applications':
-        dispatch(routerRedux.push(`${match.url}/applications`));
+      case 'image':
+        dispatch({
+          type: 'attachments/fetch',
+          payload: {
+            currentPage: 1,
+            kind: 'image',
+          },
+        });
         break;
-      case 'projects':
-        dispatch(routerRedux.push(`${match.url}/projects`));
+      case 'document':
+        dispatch({
+          type: 'attachments/fetch',
+          payload: {
+            currentPage: 1,
+            kind: 'document',
+          },
+        });
+        break;
+      case 'video':
+        dispatch({
+          type: 'attachments/fetch',
+          payload: {
+            currentPage: 1,
+            kind: 'video',
+          },
+        });
+        break;
+      case 'audio':
+        dispatch({
+          type: 'attachments/fetch',
+          payload: {
+            currentPage: 1,
+            kind: 'audio',
+          },
+        });
         break;
       default:
         break;
@@ -26,19 +93,19 @@ export default class SearchList extends Component {
 
   render() {
     const tabList = [{
-      key: 'articles',
+      key: 'all',
       tab: '全部',
     }, {
-      key: 'applications',
+      key: 'image',
       tab: '图像',
     }, {
-      key: 'projects',
+      key: 'document',
       tab: '文档',
     }, {
-      key: 'projects',
+      key: 'video',
       tab: '视频',
     }, {
-      key: 'projects',
+      key: 'audio',
       tab: '音频',
     }];
 
@@ -48,7 +115,7 @@ export default class SearchList extends Component {
           placeholder="请输入"
           enterButton="搜索"
           size="large"
-          onSearch={this.handleFormSubmit}
+          onSearch={this.handleFormSubmitSearch}
           style={{ width: 522 }}
         />
       </div>
@@ -62,7 +129,7 @@ export default class SearchList extends Component {
         title="搜索列表"
         content={mainSearch}
         tabList={tabList}
-        activeTabKey={location.pathname.replace(`${match.path}/`, '')}
+        activeTabKey={this.state.currentKey}
         onTabChange={this.handleTabChange}
       >
         <Switch>
