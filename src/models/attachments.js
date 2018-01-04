@@ -72,7 +72,7 @@ export default {
         list: Array.isArray(response.data.list) ? response.data.list : [],
         pagination: {
           total: response.data.count,
-          pageSize: response.data.pageSize || 4,
+          pageSize: response.data.pageSize || 8,
           current: response.data.currentPage || 1,
         },
       };
@@ -96,7 +96,7 @@ export default {
         list: Array.isArray(response.data.list) ? response.data.list : [],
         pagination: {
           total: response.data.count,
-          pageSize: response.data.pageSize || 4,
+          pageSize: response.data.pageSize || 8,
           current: response.data.currentPage || 1,
         },
       };
@@ -111,8 +111,8 @@ export default {
     },
     *reload(action, { put, select }) {
       // 删除或修改后，重新定位并刷新数据
-      const currentPage = yield select(state => state.role.data.pagination.current);
-      const pageSize = yield select(state => state.role.data.pagination.pageSize);
+      const currentPage = yield select(state => state.attachments.data.pagination.current);
+      const pageSize = yield select(state => state.attachments.data.pagination.pageSize);
       yield put({ type: 'fetch', payload: { currentPage, pageSize } });
     },
   },

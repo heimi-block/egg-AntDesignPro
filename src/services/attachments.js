@@ -30,7 +30,7 @@ export async function updateAttachments(id, values) {
 }
 
 export async function queryAttachments(params) {
-  return request(`/api/upload?isPaging=false&pageSize=4&${stringify(params)}`, {
+  return request(`/api/upload?isPaging=false&pageSize=8&${stringify(params)}`, {
     method: 'GET',
   });
 }

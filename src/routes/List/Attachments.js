@@ -1,22 +1,12 @@
 import React, { PureComponent } from 'react';
-import numeral from 'numeral';
 import copy from 'copy-to-clipboard';
 import moment from 'moment';
 import { connect } from 'dva';
-import { Upload, Row, Col, Form, Card, Select, Icon, Input, Avatar, Button, message, DatePicker, Modal, List, Tooltip, Dropdown, Menu } from 'antd';
-
-import StandardFormRow from '../../components/StandardFormRow';
-import TagSelect from '../../components/TagSelect';
-
+import { Upload, Row, Col, Form, Card, Icon, Input, Button, message, DatePicker, Modal, List, Tooltip } from 'antd';
 import styles from './Attachments.less';
 
-const { Option } = Select;
-const SubMenu = Menu.SubMenu;
-const MenuItemGroup = Menu.ItemGroup;
-const Search = Input.Search;
 const FormItem = Form.Item;
 const { TextArea } = Input;
-const { Meta } = Card;
 
 // 上传单个文件配置
 const propsUploadForSingle = {
@@ -61,7 +51,6 @@ const propsUploadForReupload = {
 
 export default class FilterCardList extends PureComponent {
   state = {
-    addInputValueForName: '',
     addInputValueForURL: '',
     disabled: true,
     modalVisibleForUrlUpload: false,
@@ -85,90 +74,78 @@ export default class FilterCardList extends PureComponent {
       console.log(info.file, info.fileList);
     }
     if (info.file.status === 'done') {
-      message.success(`${info.file.name} file uploaded successfully`);
-      // 上传成功后，重新加载数据
-      const { dispatch } = this.props;
-      // 2秒后重新请求数据
-      setTimeout(dispatch({
-        type: 'attachments/fetch',
-        payload: {
-          count: 8,
-        },
-      }), 2000);
+      message.success(`文件 ${info.file.name} 上传成功了`);
+      // 上传成功后，2秒后重新加载数据
+      setTimeout(
+        this.reloadData()
+        , 2000);
     } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} file upload failed.`);
+      message.error(`文件 ${info.file.name} 上传失败了`);
     }
   }
+
   // 上传多个文件实现
   onChangeUploadForMultiple = (info) => {
     if (info.file.status !== 'uploading') {
       console.log(info.file, info.fileList);
     }
     if (info.file.status === 'done') {
-      message.success(`${info.file.name} file uploaded successfully`);
-      // 上传成功后，重新加载数据
-      const { dispatch } = this.props;
-      // 2秒后重新请求数据
-      setTimeout(dispatch({
-        type: 'attachments/fetch',
-        payload: {
-          count: 8,
-        },
-      }), 2000);
+      message.success(`文件 ${info.file.name} 上传成功了`);
+      // 上传成功后，2秒后重新加载数据
+      setTimeout(
+        this.reloadData()
+        , 2000);
     } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} file upload failed.`);
+      message.error(`文件 ${info.file.name} 上传失败了`);
     }
   }
+
   // 重新上传文件实现
   onChangeUploadForReupload = (info) => {
     if (info.file.status !== 'uploading') {
       console.log(info.file, info.fileList);
     }
     if (info.file.status === 'done') {
-      message.success(`${info.file.name} file uploaded successfully`);
-      // 上传成功后，重新加载数据
-      const { dispatch } = this.props;
-      // 2秒后重新请求数据
-      setTimeout(dispatch({
-        type: 'attachments/fetch',
-        payload: {
-          count: 8,
-        },
-      }), 2000);
+      message.success(`文件 ${info.file.name} 上传成功了`);
+      // 上传成功后，2秒后重新加载数据
+      setTimeout(
+        this.reloadData()
+        , 2000);
     } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} file upload failed.`);
+      message.error(`文件 ${info.file.name} 上传失败了`);
     }
   }
 
-  handleFormSubmit = () => {
-    const { form, dispatch } = this.props;
-    // setTimeout 用于保证获取表单值是在所有表单字段更新完毕的时候
-    setTimeout(() => {
-      form.validateFields((err) => {
-        if (!err) {
-          // eslint-disable-next-line
-          dispatch({
-            type: 'attachments/fetch',
-            payload: {
-              count: 8,
-            },
-          });
-        }
+  // 上传操作后的重写加载数据
+  reloadData = () => {
+    const { dispatch } = this.props;
+    const key = window.localStorage.getItem('currentKey');
+    if (key === 'all') {
+      dispatch({
+        type: 'attachments/fetch',
+        payload: {
+          currentPage: 1,
+        },
       });
-    }, 0);
+    } else {
+      dispatch({
+        type: 'attachments/fetch',
+        payload: {
+          currentPage: 1,
+          kind: key,
+        },
+      });
+    }
   }
 
   // 复制图片URL到剪贴板
   handleCopyURLtoClipboard = (e) => {
-    console.log(111, JSON.stringify(this.props));
-    // console.log('URL:', e);
     copy(e);
     message.success('复制URL到剪贴板成功');
   }
 
   // 删除选中文件
   handleDelete = (e) => {
-    console.log('id:', e);
     this.props.dispatch({
       type: 'attachments/remove',
       payload: {
@@ -178,7 +155,7 @@ export default class FilterCardList extends PureComponent {
   }
 
   // 编辑模态框-控制器
-  handleModalVisible = (flag) => {
+  handleModalVisibleForUpdate = (flag) => {
     this.setState({
       modalVisible: !!flag,
     });
@@ -190,44 +167,31 @@ export default class FilterCardList extends PureComponent {
       modalVisibleForUrlUpload: !!flag,
     });
   }
+
   // 处理编辑
   handleEdit = (e) => {
-    console.log(111, e);
     this.setState({
       currentAttachment: e,
     });
-    this.handleModalVisible(true);
+    this.handleModalVisibleForUpdate(true);
   }
+
   // 编辑
   handleUpdate = () => {
     const { form, dispatch } = this.props;
     form.validateFields((err, values) => {
       if (!err) {
-        // onOk(values);
-        console.log(12323, values);
         const id = this.state.currentAttachment._id;
         const extra = { extra: values.extra };
         dispatch({
           type: 'attachments/update',
           payload: { id, extra },
         });
+
+        this.handleModalVisibleForUpdate(false);
       }
     });
   }
-  // 添加单个数据
-  handleAdd = () => {
-    // this.props.dispatch({
-    //   type: 'role/add',
-    //   payload: {
-    //     name: this.state.addInputValueForName,
-    //   },
-    // });
-    // message.success('添加成功');
-    this.setState({
-      modalVisible: false,
-    });
-  }
-
 
   // 通过URL添加文件
   handleUrlUpload = () => {
@@ -238,16 +202,6 @@ export default class FilterCardList extends PureComponent {
       },
     });
     this.handleModalVisibleForUrlUpload(false);
-    // this.setState({
-    //   modalVisibleForUrlUpload: false,
-    // });
-  }
-
-  // 处理添加单个数据表单的Name值--做准备-->添加单个数据
-  handleAddInputForName = (e) => {
-    this.setState({
-      addInputValueForName: e.target.value,
-    });
   }
 
   // 处理上传文件通过URL
@@ -257,27 +211,11 @@ export default class FilterCardList extends PureComponent {
     });
   }
 
-  handleClick = (e) => {
-    console.log('click ', e);
-    // this.setState({
-    //   current: e.key,
-    // })
-  }
-
-  // fetchMore = () => {
-  //   this.props.dispatch({
-  //     type: 'list/appendFetch',
-  //     payload: {
-  //       count: 10,
-  //     },
-  //   });
-  // }
-
   // 加载数据
   handleFetchMore = () => {
     const { attachments: { data }, dispatch } = this.props;
     const key = window.localStorage.getItem('currentKey');
-    message.info(key);
+    // message.info(key);
     if (key === 'all') {
       dispatch({
         type: 'attachments/appendFetch',
@@ -462,9 +400,7 @@ export default class FilterCardList extends PureComponent {
             wrapperCol={{ span: 15 }}
             label="URL地址"
           >
-            {
-                getFieldDecorator('fileNameXXURL')(<Input onChange={this.handleAddInputForUrlUpload} />)
-            }
+            <Input onChange={this.handleAddInputForUrlUpload} />
           </FormItem>
         </Modal>
       </div>
