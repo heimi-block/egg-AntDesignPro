@@ -68,6 +68,9 @@ export const getRouterData = (app) => {
     '/list/role-list': {
       component: dynamicWrapper(app, ['role'], () => import('../routes/ListRole/TableListRole')),
     },
+    '/list/user-list': {
+      component: dynamicWrapper(app, ['user'], () => import('../routes/ListUser/TableListUser')),
+    },
     '/list/basic-list': {
       component: dynamicWrapper(app, ['list'], () => import('../routes/List/BasicList')),
     },

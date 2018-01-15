@@ -1,26 +1,42 @@
 import { notification } from 'antd';
 import { routerRedux } from 'dva/router';
-import { query as queryUsers, queryCurrent } from '../services/user';
+import { message } from 'antd';
+import { addUser, removeUser, removesUser, updateUser, queryUser, queryCurrent } from '../services/user';
+import { queryRole } from '../services/role';
 
 export default {
   namespace: 'user',
 
   state: {
-    list: [],
-    loading: false,
+    data: {
+      list: [],
+      pagination: {},
+      roleOptions: [], // 角色下拉列表
+    },
+    loading: true,
     currentUser: {},
   },
-
   effects: {
-    *fetch(_, { call, put }) {
+    *fetch({ payload }, { call, put }) {
       yield put({
         type: 'changeLoading',
         payload: true,
       });
-      const response = yield call(queryUsers);
+      const response = yield call(queryUser, payload);
+      const roleOptionsResponse = yield call(queryRole, { isPaging: false });
+      // 处理表格所需的dataSource
+      const dataSource = {
+        list: response.data.list,
+        pagination: {
+          total: response.data.count,
+          pageSize: response.data.pageSize || 10,
+          current: response.data.currentPage || 1,
+        },
+        roleOptions: roleOptionsResponse.data.list,
+      };
       yield put({
         type: 'save',
-        payload: response,
+        payload: dataSource,
       });
       yield put({
         type: 'changeLoading',
@@ -51,19 +67,80 @@ export default {
         });
       }
     },
+    *add({ payload, callback }, { call, put }) {
+      // 添加单个数据
+      yield put({
+        type: 'changeLoading',
+        payload: true,
+      });
+      const response = yield call(addUser, payload);
+      if (response.code === 0) {
+        message.success('添加成功');
+      } else {
+        message.error('添加失败, 角色名称已存在');
+      }
+      if (callback) callback();
+      yield put({ type: 'reload' });
+    },
+    *remove({ payload, callback }, { call, put }) {
+      // 删除单个数据
+      yield put({
+        type: 'changeLoading',
+        payload: true,
+      });
+      const response = yield call(removeUser, payload);
+      if (response.code === 0) {
+        message.success('删除成功');
+      } else {
+        message.error('删除失败, 角色不已存在或已删除');
+      }
+      if (callback) callback();
+      yield put({ type: 'reload' });
+    },
+    *removes({ payload, callback }, { call, put }) {
+      // 删除多个数据
+      yield put({
+        type: 'changeLoading',
+        payload: true,
+      });
+      const response = yield call(removesUser, payload);
+      if (response.code === 0) {
+        message.success('删除成功');
+      } else {
+        message.error('删除失败, 角色不已存在或已删除');
+      }
+      if (callback) callback();
+      yield put({ type: 'reload' });
+    },
+    *update({ payload: { id, values }, callback }, { call, put }) {
+      // 更新单个数据
+      yield put({
+        type: 'changeLoading',
+        payload: true,
+      });
+      const response = yield call(updateUser, id, values);
+      if (response.code === 0) {
+        // 修改成功
+        message.success('修改成功');
+      } else {
+        message.error('修改失败, 角色名称已存在');
+      }
+      if (callback) callback();
+      yield put({ type: 'reload' });
+    },
+    *reload(action, { put, select }) {
+      // 删除或修改后，重新定位并刷新数据
+      const currentPage = yield select(state => state.user.data.pagination.current);
+      const pageSize = yield select(state => state.user.data.pagination.pageSize);
+      yield put({ type: 'fetch', payload: { currentPage, pageSize } });
+    },
   },
 
   reducers: {
     save(state, action) {
       return {
         ...state,
-        list: action.payload,
-      };
-    },
-    changeLoading(state, action) {
-      return {
-        ...state,
-        loading: action.payload,
+        data: action.payload,
       };
     },
     saveCurrentUser(state, action) {
@@ -72,13 +149,10 @@ export default {
         currentUser: action.payload,
       };
     },
-    changeNotifyCount(state, action) {
+    changeLoading(state, action) {
       return {
         ...state,
-        currentUser: {
-          ...state.currentUser,
-          notifyCount: action.payload,
-        },
+        loading: action.payload,
       };
     },
   },

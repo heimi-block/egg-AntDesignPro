@@ -38,6 +38,9 @@ const menuData = [{
     name: '角色列表',
     path: 'role-list',
   }, {
+    name: '用户列表',
+    path: 'user-list',
+  }, {
     name: '标准列表',
     path: 'basic-list',
   }, {
